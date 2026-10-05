@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>成品证明库</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header>
+  <h1>📜 成品证明库（仅已放行终态）</h1>
+  <span class="spacer"></span>
+  <a href="/">← 返回作业台</a>
+</header>
+<main style="display:block;max-width:1000px;margin:0 auto">
+  <div class="panel">
+    <h2>全部放行证明</h2>
+    <table>
+      <thead><tr><th>证明编号</th><th>作业</th><th>产品</th><th>快照哈希</th><th>质检</th><th>签发时间</th><th></th></tr></thead>
+      <tbody id="rows"><tr><td colspan="7" class="dim">加载中…</td></tr></tbody>
+    </table>
+  </div>
+</main>
+<script>
+fetch('/api/v1/certificates').then((r) => r.json()).then((d) => {
+  document.getElementById('rows').innerHTML = d.certificates.length
+    ? d.certificates.map((c) => `<tr>
+        <td class="mono"><a href="/c/${c.certId}">${c.certId}</a></td>
+        <td class="mono">${c.jobId}</td>
+        <td>${c.product.name}</td>
+        <td class="mono dim">${c.snapshotHash.slice(0,16)}…</td>
+        <td><span class="pill p-${c.qc?.passed ? 'ok' : 'bad'}">${c.qc?.passed ? '合格' : '—'}</span> ${c.qc?.inspector || ''}</td>
+        <td class="mono dim">${c.issuedAt}</td>
+        <td><a href="/c/${c.certId}">查看/验签</a></td>
+      </tr>`).join('')
+    : '<tr><td colspan="7" class="dim">尚无放行证明。完成全部放行闸门的作业才会签发。</td></tr>';
+});
+</script>
+</body>
+</html>

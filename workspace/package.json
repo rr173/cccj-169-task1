@@ -1,0 +1,15 @@
+{
+  "name": "am-batch-traceability",
+  "version": "1.0.0",
+  "description": "工业三维打印批次追溯与放行平台（仅追加事件链 / 冻结快照 / 层追踪 / 成品证明）",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "demo": "node src/demo.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

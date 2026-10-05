@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>工业三维打印批次追溯与放行平台</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header>
+  <h1>🏭 三维打印批次追溯与放行平台</h1>
+  <span class="chain">事件链: <b id="chainState">—</b> · <span id="chainCount">0</span> 条仅追加事件</span>
+  <span class="spacer"></span>
+  <a href="/certificates.html">📜 成品证明库</a>
+</header>
+
+<main>
+  <div>
+    <div class="panel">
+      <h2>作业</h2>
+      <div class="toolbar">
+        <button class="primary" onclick="ui.openDlg('create')">＋ 新建冻结作业</button>
+        <button onclick="ui.load()">↻ 刷新</button>
+      </div>
+      <div id="jobList"><div class="dim">加载中…</div></div>
+    </div>
+  </div>
+
+  <div id="detail"><div class="panel dim">请选择左侧作业</div></div>
+</main>
+
+<dialog id="dlg">
+  <div class="dlg-head"><span id="dlgTitle">命令</span><button onclick="ui.closeDlg()">✕</button></div>
+  <div class="dlg-body">
+    <div id="dlgHint" class="dim" style="margin-bottom:8px;font-size:12.5px"></div>
+    <textarea id="dlgBody" spellcheck="false"></textarea>
+  </div>
+  <div class="dlg-foot">
+    <button onclick="ui.closeDlg()">取消</button>
+    <button class="primary" id="dlgSend" onclick="ui.sendDlg()">提交</button>
+  </div>
+</dialog>
+
+<div id="toast"></div>
+<script src="/app.js"></script>
+</body>
+</html>

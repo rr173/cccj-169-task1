@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>成品放行证明</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header>
+  <h1>📜 成品放行证明（Certificate of Release）</h1>
+  <span class="spacer"></span>
+  <a href="/certificates.html">证明库</a>
+  <a href="/">作业台</a>
+</header>
+<main style="display:block;max-width:960px;margin:0 auto">
+  <div id="box" class="panel"><div class="dim">加载中…</div></div>
+</main>
+<script>
+const certId = location.pathname.split('/').pop();
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+fetch('/api/v1/certificates/' + certId).then((r) => r.json()).then((d) => {
+  if (d.error) { document.getElementById('box').innerHTML = '<span class="bad">' + d.error.message + '</span>'; return; }
+  const c = d.certificate, v = d.verification;
+  document.getElementById('box').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:28px">${v.ok ? '✅' : '❌'}</span>
+      <div>
+        <div style="font-size:18px;font-weight:700" class="${v.ok ? 'ok' : 'bad'}">
+          ${v.ok ? '签名验证通过：证明完整且未被篡改' : '验证失败：' + esc(v.reason)}
+        </div>
+        <div class="dim">任何人可对整份证明（含下列全部字段与闸门）重新计算 HMAC-SHA256 进行验签</div>
+      </div>
+      <span style="margin-left:auto"></span>
+      <button onclick="window.print()">🖨 打印 / 存 PDF</button>
+    </div>
+    <hr style="border-color:var(--line);margin:14px 0">
+    <div class="grid2">
+      <div class="kv"><span class="k">证明编号</span><span class="v">${c.certId}</span></div>
+      <div class="kv"><span class="k">作业编号</span><span class="v">${c.jobId}</span></div>
+      <div class="kv"><span class="k">产品</span><span class="v">${esc(c.product.name)} (${esc(c.product.sku)})</span></div>
+      <div class="kv"><span class="k">数量</span><span class="v">${c.product.qty}</span></div>
+      <div class="kv"><span class="k">生产设备</span><span class="v">${esc(c.deviceId)}</span></div>
+      <div class="kv"><span class="k">放行时间</span><span class="v">${c.releasedAt}</span></div>
+      <div class="kv"><span class="k">模型版本</span><span class="v">${esc(c.sourceVersion)}</span></div>
+      <div class="kv"><span class="k">模型文件哈希</span><span class="v">${esc(c.modelFileHash)}</span></div>
+      <div class="kv"><span class="k">切片档案</span><span class="v">${esc(c.sliceProfile)} · ${c.layerCount} 层</span></div>
+      <div class="kv"><span class="k">设备校准版本</span><span class="v">${esc(c.calVersion)}</span></div>
+    </div>
+
+    <h2 style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin:16px 0 8px">冻结作业快照（层/质检均绑定此哈希）</h2>
+    <div class="mono" style="color:var(--acc);word-break:break-all">${c.snapshotHash}</div>
+
+    <h2 style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin:16px 0 8px">材料批次与余量守恒</h2>
+    <table><thead><tr><th>料卷</th><th>批次</th><th>投料g</th><th>盘点余量g</th><th>申报消耗g</th><th>守恒</th></tr></thead>
+      <tbody>${c.materials.map((m) => `<tr>
+        <td class="mono">${m.spoolId}</td><td class="mono">${m.batchNo}</td>
+        <td>${m.initialNetG}</td><td>${m.remainingNetG}</td><td>${m.declaredConsumedG}</td>
+        <td>${m.balanced ? '<span class="pill p-ok">守恒</span>' : '<span class="pill p-bad">失衡</span>'}</td></tr>`).join('')}
+      </tbody></table>
+
+    <h2 style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin:16px 0 8px">逐层回执指纹（${c.layerHashes.length} 层）</h2>
+    <div class="mono dim" style="font-size:12px;line-height:1.9;word-break:break-all">
+      ${c.layerHashes.map((l) => `L${l.layerNo} [${l.spoolId}/${l.batchNo}] ${l.hash.slice(0,20)}…`).join('&nbsp;&nbsp;')}
+    </div>
+
+    <h2 style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin:16px 0 8px">异常处置汇总</h2>
+    <div>共 ${c.anomalySummary.total} 项：让步接受 ${c.anomalySummary.accepted}，信息性记录 ${c.anomalySummary.info}，无未处置阻断项</div>
+
+    <h2 style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin:16px 0 8px">质检绑定</h2>
+    <div class="kv"><span class="k">结论</span><span><span class="pill p-${c.qc.passed ? 'ok' : 'bad'}">${c.qc.passed ? '合格' : '不合格'}</span> ${esc(c.qc.inspector)} · 报告 ${esc(c.qc.reportId)} · ${c.qc.at}</span></div>
+
+    <h2 style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin:16px 0 8px">放行闸门证据</h2>
+    ${c.gates.map((g) => `<div class="gate"><span class="ico ${g.ok ? 'ok' : 'bad'}">${g.ok ? '✔' : '✘'}</span><span>${g.name}</span></div>`).join('')}
+
+    <h2 style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin:16px 0 8px">密码学签名</h2>
+    <div class="mono dim" style="word-break:break-all;font-size:12px">HMAC-SHA256(certificate) = ${c.signature}</div>
+  `;
+}).catch((e) => { document.getElementById('box').innerHTML = '<span class="bad">' + esc(e.message) + '</span>'; });
+</script>
+</body>
+</html>
